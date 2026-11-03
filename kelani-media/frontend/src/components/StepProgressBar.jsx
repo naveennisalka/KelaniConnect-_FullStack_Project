@@ -1,44 +1,43 @@
-const StepProgressBar = ({ currentStep, totalSteps }) => {
-  return (
-    <div className="flex items-center justify-center mb-8">
-      {Array.from({ length: totalSteps }, (_, index) => {
-        const step = index + 1
-        const isCompleted = step < currentStep
-        const isCurrent = step === currentStep
+import React from 'react';
 
-        return (
-          <div key={step} className="flex items-center">
-            {/* Step circle */}
-            <div
-              className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold transition-all duration-300
-                ${isCompleted
-                  ? 'bg-primary text-white'
-                  : isCurrent
-                    ? 'bg-primary text-white ring-4 ring-primary/20'
+const StepProgressBar = ({ currentStep = 1, totalSteps = 3 }) => {
+  return (
+    <div className="w-full max-w-md mx-auto my-4">
+      <div className="flex justify-between items-center mb-2">
+        {Array.from({ length: totalSteps }, (_, index) => {
+          const stepNumber = index + 1;
+          const isCompleted = stepNumber < currentStep;
+          const isCurrent = stepNumber === currentStep;
+
+          return (
+            <React.Fragment key={stepNumber}>
+              {/* Step Circle */}
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition-colors ${
+                  isCurrent
+                    ? 'bg-[#800000] text-white'
+                    : isCompleted
+                    ? 'bg-red-100 text-[#800000]'
                     : 'bg-gray-200 text-gray-500'
                 }`}
-            >
-              {isCompleted ? (
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              ) : (
-                step
+              >
+                {stepNumber}
+              </div>
+
+              {/* Connecting Line */}
+              {index < totalSteps - 1 && (
+                <div
+                  className={`flex-1 h-1 mx-2 transition-colors ${
+                    stepNumber < currentStep ? 'bg-[#800000]' : 'bg-gray-200'
+                  }`}
+                />
               )}
-            </div>
-
-            {/* Connector line */}
-            {step < totalSteps && (
-              <div
-                className={`w-12 h-1 mx-1 rounded transition-all duration-300
-                  ${isCompleted ? 'bg-primary' : 'bg-gray-200'}`}
-              />
-            )}
-          </div>
-        )
-      })}
+            </React.Fragment>
+          );
+        })}
+      </div>
     </div>
-  )
-}
+  );
+};
 
-export default StepProgressBar
+export default StepProgressBar;
