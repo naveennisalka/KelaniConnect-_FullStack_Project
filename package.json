@@ -1,0 +1,11 @@
+{
+  "name": "kelaniconnect-project",
+  "version": "1.0.0",
+  "private": true,
+  "description": "KelaniConnect FullStack Monorepo",
+  "scripts": {
+    "dev": "npm run dev --prefix kelani-media/frontend",
+    "build": "npm run build --prefix kelani-media/frontend",
+    "preview": "npm run preview --prefix kelani-media/frontend"
+  }
+}
