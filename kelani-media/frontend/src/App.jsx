@@ -1,25 +1,14 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
-import Login from './pages/Login.jsx'
-import Signup from './pages/Signup.jsx'
-import Home from './pages/Home.jsx'
-import ProtectedRoute from './components/ProtectedRoute.jsx'
+import React from 'react';
+import { Routes, Route } from 'react-router-dom';
+import FriendsPage from './pages/FriendsPage.jsx';
 
 function App() {
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/login" replace />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/signup" element={<Signup />} />
-      <Route
-        path="/home"
-        element={
-          <ProtectedRoute>
-            <Home />
-          </ProtectedRoute>
-        }
-      />
+      <Route path="/friends" element={<FriendsPage />} />
+      <Route path="*" element={<FriendsPage />} /> {/* Fallback route so any path shows your page */}
     </Routes>
-  )
+  );
 }
 
-export default App
+export default App;
