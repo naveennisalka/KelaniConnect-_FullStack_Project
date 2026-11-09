@@ -53,11 +53,34 @@ const ProfilePage = () => {
           </div>
         </div>
 
-        {/* Dynamic Tab Content Area (Will be filled in next steps) */}
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 min-h-[300px]">
           {activeTab === 'Posts' && <div className="text-xs text-gray-400 text-center py-12">Posts Grid Content Loading...</div>}
           {activeTab === 'Events' && <div className="text-xs text-gray-400 text-center py-12">Events Content Loading...</div>}
           {activeTab === 'Info' && <div className="text-xs text-gray-400 text-center py-12">User Info Details Loading...</div>}
+        </div>
+        {/* Dynamic Tab Content Area */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 min-h-[300px]">
+          {activeTab === 'Posts' && (
+            <div className="space-y-6">
+              <h3 className="text-sm font-bold text-gray-800">Recent Posts</h3>
+              {/* Instagram Style 3-Column Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                {[1, 2, 3, 4, 5, 6].map((item) => (
+                  <div key={item} className="bg-gray-100 rounded-xl h-48 flex items-center justify-center border border-gray-200 hover:opacity-90 transition-opacity cursor-pointer">
+                    <span className="text-xs text-gray-400 font-medium">Post Image {item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'Events' && (
+            <div className="text-xs text-gray-400 text-center py-12">Events Content Loading...</div>
+          )}
+
+          {activeTab === 'Info' && (
+            <div className="text-xs text-gray-400 text-center py-12">User Info Details Loading...</div>
+          )}
         </div>
 
       </div>
