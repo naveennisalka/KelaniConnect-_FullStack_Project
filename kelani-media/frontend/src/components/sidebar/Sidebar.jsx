@@ -8,7 +8,7 @@ const Sidebar = () => (
         <a href="#" className="flex items-center space-x-3 text-gray-600 p-2.5 rounded-lg hover:bg-gray-100">Home</a>
         <a href="#" className="flex items-center space-x-3 text-gray-600 p-2.5 rounded-lg hover:bg-gray-100">Events</a>
         <a href="#" className="flex items-center space-x-3 text-white bg-[#800000] p-2.5 rounded-lg font-medium shadow-sm">Friends</a>
-        <a href="#" className="flex items-center space-x-3 text-gray-600 p-2.5 rounded-lg hover:bg-gray-100">Jobs</a>
+        <a href="/jobs" className="flex items-center space-x-3 text-gray-600 p-2.5 rounded-lg hover:bg-gray-100">Jobs</a>
       </nav>
     </div>
     <div className="space-y-2 border-t pt-4">
