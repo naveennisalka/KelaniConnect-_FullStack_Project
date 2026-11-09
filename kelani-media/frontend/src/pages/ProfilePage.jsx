@@ -75,11 +75,33 @@ const ProfilePage = () => {
           )}
 
           {activeTab === 'Events' && (
-            <div className="text-xs text-gray-400 text-center py-12">Events Content Loading...</div>
+            <div className="space-y-6">
+              <h3 className="text-sm font-bold text-gray-800">My Events</h3>
+              {/* Events Cards Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {[1, 2].map((event) => (
+                  <div key={event} className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm space-y-3">
+                    <div className="h-32 bg-gray-100 rounded-lg flex items-center justify-center">
+                      <span className="text-xs text-gray-400 font-medium">Event Banner {event}</span>
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-gray-800">University Annual Tech Fest {event}</h4>
+                      <p className="text-[10px] text-gray-400 mt-0.5">Organized by Computer Science Society</p>
+                    </div>
+                    <button className="bg-[#800000] text-white px-4 py-1.5 rounded-lg text-[10px] font-semibold hover:bg-[#600000] transition-colors">
+                      View Event
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
 
           {activeTab === 'Info' && (
-            <div className="text-xs text-gray-400 text-center py-12">User Info Details Loading...</div>
+            <div className="space-y-6">
+              <h3 className="text-sm font-bold text-gray-800">User Information</h3>
+              <div className="text-xs text-gray-400 text-center py-12">User bio and academic details will appear here...</div>
+            </div>
           )}
         </div>
 
