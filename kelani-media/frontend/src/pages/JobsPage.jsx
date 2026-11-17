@@ -1,248 +1,260 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Sidebar from '../components/sidebar/Sidebar';
+import { useAuth } from '../context/AuthContext.jsx';
+import { jobService } from '../services/jobService.js';
+import toast from 'react-hot-toast';
+
+const EMPTY_JOB = {
+  title: '',
+  society: '',
+  location: '',
+  stipend: '',
+  description: '',
+  imageUrl: ''
+};
 
 const JobsPage = () => {
+  const { user } = useAuth();
+  const canPublish = user?.roles?.some((role) => ['ADMIN', 'TEACHER'].includes(role));
   const [activeTab, setActiveTab] = useState('Jobs');
-  const [showSubmitModal, setShowSubmitModal] = useState(false);
+  const [jobs, setJobs] = useState([]);
+  const [applications, setApplications] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [savingJob, setSavingJob] = useState(false);
+  const [jobForm, setJobForm] = useState(EMPTY_JOB);
+  const [selectedApplication, setSelectedApplication] = useState(null);
+  const [submission, setSubmission] = useState({ submissionUrl: '', comment: '' });
+  const [savingSubmission, setSavingSubmission] = useState(false);
 
-  // Mock data for Jobs tab
-  const availableJobs = [
-    {
-      id: 1,
-      title: 'Campus Event Photographer Needed',
-      society: 'Electronic student society',
-      location: 'Dharmaloca hall, uok',
-      stipend: '5000 LKR',
-      description: 'Looking for an experienced student photographer to cover the annual tech hackathon event.'
-    },
-    {
-      id: 2,
-      title: 'UI/UX Design Assistant for Club Web App',
-      society: 'IEEE Student Branch',
-      location: 'Remote / Lab',
-      stipend: 'Certificate + Perks',
-      description: 'Help design promotional banners and UI components for upcoming faculty events.'
+  const loadJobs = async () => {
+    try {
+      const [availableJobs, myApplications] = await Promise.all([
+        jobService.getJobs(),
+        jobService.getMyApplications()
+      ]);
+      setJobs(availableJobs);
+      setApplications(myApplications);
+    } catch {
+      toast.error('Could not load jobs. Please check your connection and try again.');
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
-  // Mock data for Ongoing tab
-  const ongoingJobs = [
-    {
-      id: 1,
-      title: 'Mobile App Bug Fixing & Testing',
-      society: 'Computer Science Circle',
-      location: 'Lab 03 / Remote',
-      timeLeft: '1d 3h 36m',
-      description: 'Fix navigation bugs and test responsiveness for the departmental mobile application.'
+  useEffect(() => {
+    loadJobs();
+  }, []);
+
+  const handleCreateJob = async (e) => {
+    e.preventDefault();
+    setSavingJob(true);
+    try {
+      const job = await jobService.createJob(jobForm);
+      setJobs((currentJobs) => [job, ...currentJobs]);
+      setJobForm(EMPTY_JOB);
+      toast.success('Job posted.');
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Could not post this job.');
+    } finally {
+      setSavingJob(false);
     }
-  ];
+  };
+
+  const handleApply = async (job) => {
+    try {
+      const application = await jobService.apply(job.id, '');
+      setApplications((currentApplications) => [application, ...currentApplications]);
+      toast.success('Application submitted.');
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Could not apply for this job.');
+    }
+  };
+
+  const handleSubmitWork = async (e) => {
+    e.preventDefault();
+    if (!selectedApplication) return;
+    setSavingSubmission(true);
+    try {
+      const updatedApplication = await jobService.submitWork(selectedApplication.id, submission);
+      setApplications((currentApplications) => currentApplications.map((application) => (
+        application.id === updatedApplication.id ? updatedApplication : application
+      )));
+      setSelectedApplication(null);
+      setSubmission({ submissionUrl: '', comment: '' });
+      toast.success('Work submission saved.');
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Could not submit your work.');
+    } finally {
+      setSavingSubmission(false);
+    }
+  };
+
+  const appliedJobIds = new Set(applications.map((application) => application.jobId));
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      {/* Left Sidebar */}
       <Sidebar />
 
-      {/* Main Container Area */}
-      <div className="flex-1 flex flex-col lg:flex-row p-6 gap-6 max-w-7xl mx-auto">
-        
-        {/* Center Feed Area */}
-        <div className="flex-1 space-y-6">
-          
-          {/* Top Search Bar */}
-          <div className="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 flex items-center px-4 gap-3">
-            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <input
-              type="text"
-              placeholder="Find Friends, Jobs, Gigs..."
-              className="w-full bg-transparent text-xs focus:outline-none text-gray-700"
-            />
+      <main className="flex-1 flex flex-col lg:flex-row p-6 gap-6 max-w-7xl mx-auto w-full">
+        <section className="flex-1 space-y-6">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Campus Jobs</h1>
+            <p className="text-sm text-gray-500 mt-1">Browse opportunities and manage your applications.</p>
           </div>
 
-          {/* Tabs (Jobs / Ongoing) */}
+          {canPublish ? (
+            <form onSubmit={handleCreateJob} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 space-y-3">
+              <h2 className="font-bold text-gray-800">Post a job</h2>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {[
+                  ['title', 'Job title'],
+                  ['society', 'Organization'],
+                  ['location', 'Location'],
+                  ['stipend', 'Compensation']
+                ].map(([field, label]) => (
+                  <input
+                    key={field}
+                    required
+                    maxLength={160}
+                    value={jobForm[field]}
+                    onChange={(e) => setJobForm({ ...jobForm, [field]: e.target.value })}
+                    placeholder={label}
+                    className="rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                  />
+                ))}
+              </div>
+              <textarea
+                required
+                maxLength={5000}
+                value={jobForm.description}
+                onChange={(e) => setJobForm({ ...jobForm, description: e.target.value })}
+                placeholder="Describe the opportunity"
+                rows={3}
+                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+              />
+              <input
+                type="url"
+                maxLength={2048}
+                value={jobForm.imageUrl}
+                onChange={(e) => setJobForm({ ...jobForm, imageUrl: e.target.value })}
+                placeholder="Image URL (optional)"
+                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+              />
+              <button disabled={savingJob} className="rounded-lg bg-[#800000] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
+                {savingJob ? 'Posting...' : 'Publish job'}
+              </button>
+            </form>
+          ) : (
+            <p className="rounded-xl bg-white p-4 text-xs text-gray-500 shadow-sm">
+              Job publishing is limited to teacher and admin accounts.
+            </p>
+          )}
+
           <div className="flex gap-6 border-b border-gray-200 px-2">
             {['Jobs', 'Ongoing'].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`pb-2 text-xs font-semibold transition-colors relative ${
-                  activeTab === tab ? 'text-[#800000]' : 'text-gray-400 hover:text-gray-600'
-                }`}
+                className={`pb-2 text-sm font-semibold ${activeTab === tab ? 'border-b-2 border-[#800000] text-[#800000]' : 'text-gray-400'}`}
               >
-                {tab}
-                {activeTab === tab && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#800000] rounded-full"></div>
-                )}
+                {tab}{tab === 'Ongoing' ? ` (${applications.length})` : ''}
               </button>
             ))}
           </div>
 
-          {/* Conditional Content Based on Tabs */}
-          {activeTab === 'Jobs' ? (
-            <div className="space-y-4">
-              {availableJobs.map((job) => (
-                <div key={job.id} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 space-y-4 hover:shadow-md transition-shadow">
-                  <div className="flex justify-between items-start">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-gray-200"></div>
-                      <div>
-                        <h3 className="text-sm font-bold text-gray-800">{job.title}</h3>
-                        <p className="text-[11px] text-gray-400">{job.society} • {job.location}</p>
-                      </div>
-                    </div>
-                    <span className="bg-rose-50 text-[#800000] text-[10px] font-semibold px-3 py-1 rounded-full border border-rose-100">
-                      {job.stipend}
-                    </span>
+          {loading ? (
+            <p className="py-8 text-center text-sm text-gray-400">Loading jobs...</p>
+          ) : activeTab === 'Jobs' ? (
+            jobs.length ? jobs.map((job) => (
+              <article key={job.id} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 space-y-4">
+                <div className="flex justify-between gap-4">
+                  <div>
+                    <h2 className="font-bold text-gray-800">{job.title}</h2>
+                    <p className="text-xs text-gray-500">{job.society} · {job.location}</p>
                   </div>
-                  
-                  {/* Wireframe Placeholder Box */}
-                  <div className="w-full h-36 bg-gray-50 border border-dashed border-gray-200 rounded-xl flex items-center justify-center text-gray-300 text-xs">
-                    [ Job Preview Banner / Image ]
-                  </div>
-
-                  <div className="flex justify-end pt-2">
-                    <button className="w-full bg-[#3d4451] text-white text-xs font-medium py-2.5 rounded-xl hover:bg-[#2d323c] transition-colors shadow-sm">
-                      Apply Job
-                    </button>
-                  </div>
+                  <span className="h-fit rounded-full border border-rose-100 bg-rose-50 px-3 py-1 text-xs font-semibold text-[#800000]">{job.stipend}</span>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {ongoingJobs.map((job) => (
-                <div key={job.id} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 space-y-4 hover:shadow-md transition-shadow">
-                  <div className="flex justify-between items-start">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-gray-200"></div>
-                      <div>
-                        <h3 className="text-sm font-bold text-gray-800">{job.title}</h3>
-                        <p className="text-[11px] text-gray-400">{job.society}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Wireframe Placeholder Box */}
-                  <div className="w-full h-36 bg-gray-50 border border-dashed border-gray-200 rounded-xl flex items-center justify-center text-gray-300 text-xs">
-                    [ Active Task Workspace ]
-                  </div>
-
-                  <div className="flex justify-between items-center pt-2">
-                    <button
-                      onClick={() => setShowSubmitModal(true)}
-                      className="bg-[#3d4451] text-white text-xs font-medium px-6 py-2.5 rounded-xl hover:bg-[#2d323c] transition-colors shadow-sm"
-                    >
-                      Submit work
-                    </button>
-                    <span className="text-xs font-medium text-gray-500">
-                      Time Left : {job.timeLeft}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-        </div>
-
-        {/* Right Sidebar Profile & Widgets */}
-        <div className="w-full lg:w-80 space-y-6">
-          
-          {/* User Profile Card */}
-          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 space-y-3">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-gray-300"></div>
-              <div>
-                <div className="w-28 h-3 bg-gray-200 rounded mb-1.5"></div>
-                <div className="w-16 h-2.5 bg-gray-100 rounded"></div>
+                {job.imageUrl && <img src={job.imageUrl} alt="Job" loading="lazy" className="max-h-64 w-full rounded-xl object-cover" />}
+                <p className="whitespace-pre-line text-sm text-gray-600">{job.description}</p>
+                <p className="text-xs text-gray-400">Posted by {job.createdByName}</p>
+                <button
+                  type="button"
+                  onClick={() => handleApply(job)}
+                  disabled={appliedJobIds.has(job.id) || job.createdBy === user?.id}
+                  className="w-full rounded-xl bg-[#3d4451] py-2.5 text-xs font-medium text-white hover:bg-[#2d323c] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {job.createdBy === user?.id ? 'Your job posting' : appliedJobIds.has(job.id) ? 'Applied' : 'Apply for job'}
+                </button>
+              </article>
+            )) : <p className="rounded-xl bg-white p-8 text-center text-sm text-gray-400">No job opportunities have been posted yet.</p>
+          ) : applications.length ? applications.map((application) => (
+            <article key={application.id} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="font-bold text-gray-800">{application.jobTitle}</h2>
+                <span className="rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-600">{application.status}</span>
               </div>
-            </div>
-            {/* Star Rating */}
-            <div className="flex gap-1 text-amber-400 text-sm pt-1">
-              ★ ★ ★ ★ ☆
-            </div>
+              {application.submissionUrl && (
+                <a href={application.submissionUrl} target="_blank" rel="noreferrer" className="text-sm text-[#800000] underline">Submitted work</a>
+              )}
+              {application.status !== 'SUBMITTED' && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedApplication(application)}
+                  className="rounded-lg bg-[#3d4451] px-5 py-2 text-xs font-semibold text-white"
+                >
+                  Submit work link
+                </button>
+              )}
+            </article>
+          )) : <p className="rounded-xl bg-white p-8 text-center text-sm text-gray-400">You haven’t applied for any jobs yet.</p>}
+        </section>
+
+        <aside className="w-full lg:w-72 space-y-4">
+          <div className="rounded-2xl bg-white p-5 shadow-sm border border-gray-100">
+            <h2 className="font-bold text-gray-800">My applications</h2>
+            <p className="mt-2 text-3xl font-bold text-[#800000]">{applications.length}</p>
+            <p className="text-xs text-gray-500">Applications saved to your account</p>
           </div>
+        </aside>
+      </main>
 
-          {/* My Earnings Card */}
-          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 space-y-3">
-            <h4 className="text-xs font-bold text-gray-700">My Earnings</h4>
-            <div className="w-full h-10 bg-gray-100 rounded-xl flex items-center px-4 text-xs font-semibold text-gray-500">
-              15,000 LKR
-            </div>
-          </div>
-
-          {/* Skills Toggle Card */}
-          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 space-y-4">
-            <h4 className="text-xs font-bold text-gray-700">Skills</h4>
-            <div className="space-y-3">
-              {['React & Tailwind', 'UI/UX Design', 'Python / ML', 'Photography'].map((skill, index) => (
-                <div key={index} className="flex justify-between items-center text-xs">
-                  <span className="text-gray-600 font-medium">{skill}</span>
-                  <div className="w-8 h-4 bg-[#800000] rounded-full relative p-0.5 flex items-center justify-end cursor-pointer">
-                    <div className="w-3 h-3 bg-white rounded-full shadow-sm"></div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-        </div>
-
-      </div>
-
-      {/* Submit Work Modal */}
-      {showSubmitModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl w-full max-w-xl p-6 space-y-5 shadow-xl">
-            <div className="flex justify-between items-center border-b pb-3">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-gray-200"></div>
-                <div>
-                  <h4 className="text-xs font-bold text-gray-800">Submit Task Files</h4>
-                  <p className="text-[10px] text-gray-400">Time Left : 1d 3h 36m</p>
-                </div>
-              </div>
-              <span className="bg-rose-50 text-[#800000] text-xs font-bold px-3 py-1 rounded-xl">
-                100 Points
-              </span>
-            </div>
-
-            <div className="space-y-4 text-xs">
-              <div>
-                <label className="block font-semibold text-gray-600 mb-1.5">Add Files</label>
-                <div className="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center text-gray-400 hover:border-rose-900 transition-colors cursor-pointer">
-                  Drag & drop your deliverables or browse files
-                </div>
-              </div>
-
-              <div>
-                <label className="block font-semibold text-gray-600 mb-1.5">Comments</label>
-                <div className="border border-gray-200 rounded-xl overflow-hidden">
-                  <textarea rows="3" placeholder="Rich text editor..." className="w-full p-3 focus:outline-none text-xs"></textarea>
-                  <div className="bg-gray-50 border-t border-gray-200 px-3 py-2 flex gap-3 text-gray-500 font-bold">
-                    <span>B</span>
-                    <span>I</span>
-                    <span>S</span>
-                    <span>•=</span>
-                    <span>&lt;/&gt;</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-2 pt-2">
-              <button onClick={() => setShowSubmitModal(false)} className="w-full py-2.5 bg-[#3d4451] text-white text-xs font-medium rounded-xl hover:bg-[#2d323c]">
-                Submit work
+      {selectedApplication && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <form onSubmit={handleSubmitWork} className="w-full max-w-lg space-y-4 rounded-2xl bg-white p-6 shadow-xl">
+            <h2 className="font-bold text-gray-800">Submit work for {selectedApplication.jobTitle}</h2>
+            <label className="block text-xs font-semibold text-gray-600">
+              Work URL
+              <input
+                required
+                type="url"
+                maxLength={2048}
+                value={submission.submissionUrl}
+                onChange={(e) => setSubmission({ ...submission, submissionUrl: e.target.value })}
+                placeholder="https://..."
+                className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm font-normal"
+              />
+            </label>
+            <label className="block text-xs font-semibold text-gray-600">
+              Comments
+              <textarea
+                maxLength={2000}
+                value={submission.comment}
+                onChange={(e) => setSubmission({ ...submission, comment: e.target.value })}
+                rows={3}
+                className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm font-normal"
+              />
+            </label>
+            <div className="flex gap-2">
+              <button disabled={savingSubmission} className="flex-1 rounded-lg bg-[#800000] py-2 text-sm font-semibold text-white disabled:opacity-50">
+                {savingSubmission ? 'Saving...' : 'Submit'}
               </button>
-              <button onClick={() => setShowSubmitModal(false)} className="w-full py-2.5 bg-gray-100 text-gray-600 text-xs font-medium rounded-xl hover:bg-gray-200">
+              <button type="button" onClick={() => setSelectedApplication(null)} className="flex-1 rounded-lg bg-gray-100 py-2 text-sm font-semibold text-gray-700">
                 Cancel
               </button>
             </div>
-          </div>
+          </form>
         </div>
       )}
-
     </div>
   );
 };

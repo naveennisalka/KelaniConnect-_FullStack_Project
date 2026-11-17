@@ -5,119 +5,79 @@ import FriendRequestCard from '../components/friends/FriendRequestCard.jsx';
 import FindFriendCard from '../components/friends/FindFriendCard.jsx';
 import ProfileStatsCard from '../components/friends/ProfileStatsCard.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
+import { friendService } from '../services/friendService.js';
+import { userService } from '../services/userService.js';
 import toast from 'react-hot-toast';
-
-const DEFAULT_REQUESTS = [
-  {
-    id: 'req_1',
-    senderId: 'student_chamath',
-    senderName: 'Chamath Fernando',
-    faculty: 'Faculty of Computing & Technology'
-  },
-  {
-    id: 'req_2',
-    senderId: 'student_nethmi',
-    senderName: 'Nethmi Silva',
-    faculty: 'Faculty of Science'
-  }
-];
-
-const DISCOVERY_STUDENTS = [
-  {
-    id: 'student_chamath',
-    name: 'Chamath Fernando',
-    faculty: 'Faculty of Computing & Technology',
-    degree: 'BSc (Hons) in Software Engineering'
-  },
-  {
-    id: 'student_nethmi',
-    name: 'Nethmi Silva',
-    faculty: 'Faculty of Science',
-    degree: 'BSc (Hons) in Computer Science'
-  },
-  {
-    id: 'student_ravindu',
-    name: 'Ravindu Bandara',
-    faculty: 'Faculty of Commerce & Management',
-    degree: 'BBA (Hons) in Human Resource Management'
-  },
-  {
-    id: 'student_malik',
-    name: 'Malik Jayawardena',
-    faculty: 'Faculty of Computing & Technology',
-    degree: 'BSc (Hons) in Computer Systems Engineering'
-  },
-  {
-    id: 'sample1',
-    name: 'Dilshan Wickramasinghe',
-    faculty: 'Faculty of Computing & Technology',
-    degree: 'BSc (Hons) in Information Technology'
-  }
-];
 
 const FriendsPage = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('requests');
   const [searchQuery, setSearchQuery] = useState('');
-  const [pendingRequests, setPendingRequests] = useState(DEFAULT_REQUESTS);
+  const [pendingRequests, setPendingRequests] = useState([]);
+  const [discoveryStudents, setDiscoveryStudents] = useState([]);
   const [sentFriendIds, setSentFriendIds] = useState(new Set());
-
-  const currentUserId = user?.id || '650000000000000000000001';
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchPendingRequests();
-  }, [currentUserId]);
-
-  const fetchPendingRequests = async () => {
-    try {
-      const res = await fetch(`http://localhost:8080/api/friends/requests/pending/${currentUserId}`);
-      if (res.ok) {
-        const data = await res.json();
-        if (Array.isArray(data) && data.length > 0) {
-          setPendingRequests(data);
+    let cancelled = false;
+    const loadFriends = async () => {
+      try {
+        const [requests, students] = await Promise.all([
+          friendService.getPendingRequests(),
+          userService.discover()
+        ]);
+        if (!cancelled) {
+          setPendingRequests(requests);
+          setDiscoveryStudents(students);
+        }
+      } catch {
+        if (!cancelled) {
+          toast.error('Could not load friends. Please check your connection and try again.');
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
         }
       }
-    } catch (err) {
-      console.warn('Backend friends API unreachable, using local demo data:', err.message);
-    }
-  };
+    };
+
+    loadFriends();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleAccept = async (requestId) => {
     try {
-      const res = await fetch(`http://localhost:8080/api/friends/request/accept/${requestId}`, { method: 'PUT' });
-      if (res.ok) {
-        fetchPendingRequests();
-        toast.success('Friend request accepted!');
-        return;
-      }
-    } catch (err) {
-      // offline fallback
+      await friendService.acceptRequest(requestId);
+      setPendingRequests((requests) => requests.filter((request) => request.id !== requestId));
+      toast.success('Friend request accepted!');
+    } catch {
+      toast.error('Could not accept the friend request. Please try again.');
     }
-    setPendingRequests(prev => prev.filter(req => req.id !== requestId));
-    toast.success('Friend request accepted!');
   };
 
   const handleReject = async (requestId) => {
     try {
-      const res = await fetch(`http://localhost:8080/api/friends/request/reject/${requestId}`, { method: 'DELETE' });
-      if (res.ok) {
-        fetchPendingRequests();
-        toast('Request declined');
-        return;
-      }
-    } catch (err) {
-      // offline fallback
+      await friendService.rejectRequest(requestId);
+      setPendingRequests((requests) => requests.filter((request) => request.id !== requestId));
+      toast('Request declined');
+    } catch {
+      toast.error('Could not decline the friend request. Please try again.');
     }
-    setPendingRequests(prev => prev.filter(req => req.id !== requestId));
-    toast('Request declined');
   };
 
-  const handleAddFriend = (studentId) => {
-    setSentFriendIds(new Set([...sentFriendIds, studentId]));
-    toast.success('Friend request sent!');
+  const handleAddFriend = async (studentId) => {
+    try {
+      await friendService.sendRequest(studentId);
+      setSentFriendIds((ids) => new Set([...ids, studentId]));
+      toast.success('Friend request sent!');
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Could not send the friend request. Please try again.');
+    }
   };
 
-  const filteredDiscoveryStudents = DISCOVERY_STUDENTS.filter(s => {
+  const filteredDiscoveryStudents = discoveryStudents.filter(s => {
     const q = searchQuery.toLowerCase();
     return s.name.toLowerCase().includes(q) ||
            s.faculty.toLowerCase().includes(q) ||
@@ -169,14 +129,16 @@ const FriendsPage = () => {
             >
               <span>Find Friends</span>
               <span className="px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded-full">
-                {DISCOVERY_STUDENTS.length}
+                {discoveryStudents.length}
               </span>
             </button>
           </div>
 
           {/* Tab Content */}
           <div className="space-y-4 max-w-xl mx-auto">
-            {activeTab === 'requests' ? (
+            {loading ? (
+              <p className="text-center py-12 text-gray-400 text-sm">Loading connections...</p>
+            ) : activeTab === 'requests' ? (
               pendingRequests.length > 0 ? (
                 pendingRequests.map((req) => (
                   <FriendRequestCard

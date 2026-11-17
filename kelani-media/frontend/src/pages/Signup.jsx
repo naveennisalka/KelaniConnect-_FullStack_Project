@@ -89,16 +89,8 @@ const Signup = () => {
               newErrors.email = 'An account with this email already exists'
             }
           } catch (err) {
-            console.error('Email check error:', err)
             const serverMsg = err.response?.data?.message
-            if (serverMsg) {
-              newErrors.email = serverMsg
-            } else if (err.code === 'ERR_NETWORK' || !err.response) {
-              // Server offline - inform user but allow proceeding
-              toast('Backend offline: proceeding in local test mode', { icon: 'ℹ️' })
-            } else {
-              newErrors.email = 'Unable to verify email. Please try again.'
-            }
+            newErrors.email = serverMsg || 'Unable to reach the server. Please try again.'
           } finally {
             setLoading(false)
           }
@@ -177,23 +169,7 @@ const Signup = () => {
       toast.success('Account created successfully! 🎉')
       navigate('/home')
     } catch (error) {
-      if (error.code === 'ERR_NETWORK' || !error.response) {
-        const fallbackUser = {
-          id: 'user_' + Date.now(),
-          email: formData.email,
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          birthday: formData.birthday,
-          faculty: formData.faculty,
-          degreeProgram: formData.degreeProgram,
-          token: 'demo-token-' + Date.now()
-        }
-        login(fallbackUser)
-        toast.success('Account created! (Demo/Offline Mode) 🎉')
-        navigate('/home')
-        return
-      }
-      const message = error.response?.data?.message || 'Signup failed. Please try again.'
+      const message = error.response?.data?.message || 'Could not connect to the server. Please try again.'
       toast.error(message)
     } finally {
       setLoading(false)

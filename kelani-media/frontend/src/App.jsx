@@ -5,9 +5,8 @@ import Signup from './pages/Signup.jsx';
 import Home from './pages/Home.jsx';
 import FriendsPage from './pages/FriendsPage.jsx';
 import JobsPage from './pages/JobsPage.jsx';
+import EventsPage from './pages/EventsPage.jsx';
 import ProfilePage from './pages/ProfilePage.jsx';
-<<<<<<< Updated upstream
-=======
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import { useAuth } from './context/AuthContext.jsx';
 
@@ -29,17 +28,10 @@ const RootRedirect = () => {
   // First running app: goes to /login if not authenticated; if already logged in goes to /home
   return isAuthenticated ? <Navigate to="/home" replace /> : <Navigate to="/login" replace />;
 };
->>>>>>> Stashed changes
 
 function App() {
   return (
     <Routes>
-<<<<<<< Updated upstream
-      <Route path="/friends" element={<FriendsPage />} />
-      <Route path="/jobs" element={<JobsPage />} />
-      <Route path="/profile" element={<ProfilePage />} />
-      <Route path="*" element={<FriendsPage />} /> {/* Fallback route so any path shows your page */}
-=======
       {/* Root path: when opening the app, redirects to login (or home if already logged in) */}
       <Route path="/" element={<RootRedirect />} />
 
@@ -73,6 +65,14 @@ function App() {
         }
       />
       <Route
+        path="/events"
+        element={
+          <ProtectedRoute>
+            <EventsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/profile"
         element={
           <ProtectedRoute>
@@ -91,7 +91,6 @@ function App() {
 
       {/* Catch-all: redirect unknown paths to login / root redirect */}
       <Route path="*" element={<RootRedirect />} />
->>>>>>> Stashed changes
     </Routes>
   );
 }

@@ -32,27 +32,11 @@ const Login = () => {
       toast.success('Welcome back!')
       navigate(from, { replace: true })
     } catch (error) {
-      console.warn('Backend login error:', error)
-      const message = error.response?.data?.message || 'Login failed. Please check your credentials or backend server.'
+      const message = error.response?.data?.message || 'Could not connect to the server. Please try again.'
       toast.error(message)
     } finally {
       setLoading(false)
     }
-  }
-
-  const handleDemoLogin = () => {
-    const demoUser = {
-      id: '650000000000000000000001',
-      firstName: 'Kasun',
-      lastName: 'Perera',
-      email: 'kasun.perera@stu.kln.ac.lk',
-      faculty: 'Faculty of Computing & Technology',
-      degreeProgram: 'BSc (Hons) in Software Engineering',
-      token: 'demo-jwt-token-12345'
-    }
-    login(demoUser)
-    toast.success('Signed in as Demo Student!')
-    navigate('/home', { replace: true })
   }
 
   return (
@@ -143,23 +127,6 @@ const Login = () => {
               )}
             </button>
 
-            {/* Demo Login Button */}
-            <div className="relative my-4">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-200" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white px-2 text-gray-400">or explore instantly</span>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={handleDemoLogin}
-              className="w-full py-2.5 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-xl text-sm transition-all border border-gray-200 flex items-center justify-center gap-2"
-            >
-              <span>🎓 Continue as Demo Student</span>
-            </button>
           </form>
         </div>
 

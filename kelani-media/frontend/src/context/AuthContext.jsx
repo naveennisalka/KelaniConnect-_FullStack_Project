@@ -18,8 +18,10 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const token = getToken()
     const savedUser = getUser()
-    if (token && savedUser) {
+    if (token && savedUser?.id) {
       setUser(savedUser)
+    } else if (token || savedUser) {
+      removeToken()
     }
     setLoading(false)
   }, [])
@@ -32,6 +34,14 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
+  const updateUser = (userData) => {
+    setUser((currentUser) => {
+      const updatedUser = { ...currentUser, ...userData }
+      saveUser(updatedUser)
+      return updatedUser
+    })
+  }
+
   const logout = () => {
     setUser(null)
     removeToken()
@@ -40,6 +50,7 @@ export const AuthProvider = ({ children }) => {
   const value = {
     user,
     login,
+    updateUser,
     logout,
     isAuthenticated: !!user,
     loading
