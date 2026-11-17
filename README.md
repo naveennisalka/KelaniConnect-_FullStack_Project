@@ -67,7 +67,7 @@ KelaniConnect-_FullStack_Project/
 
 ### 1. Clone the Repository
 ```bash
-git clone [https://github.com/](https://github.com/)<your-username>/KelaniConnect-_FullStack_Project.git
+git clone https://github.com/naveennisalka/KelaniConnect-_FullStack_Project.git
 cd KelaniConnect-_FullStack_Project
 ```
 
