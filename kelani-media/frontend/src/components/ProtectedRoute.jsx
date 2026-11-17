@@ -1,16 +1,30 @@
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext.jsx';
+import { getToken } from '../services/authService.js';
 
 const ProtectedRoute = ({ children }) => {
-  // Check if token exists in localStorage (adjust key if your auth uses a different key name)
-  const token = localStorage.getItem('token');
+  const { isAuthenticated, loading } = useAuth();
+  const location = useLocation();
 
-  if (!token) {
-    // If not logged in, redirect to login page
-    return <Navigate to="/login" replace />;
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 border-4 border-[#800000] border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-sm text-gray-500">Loading KelaniConnect...</p>
+        </div>
+      </div>
+    );
   }
 
-  // If logged in, render the child component (e.g., Home or FriendsPage)
+  // Check auth state or token in storage
+  const hasToken = isAuthenticated || !!getToken() || !!localStorage.getItem('token');
+
+  if (!hasToken) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
   return children;
 };
 
