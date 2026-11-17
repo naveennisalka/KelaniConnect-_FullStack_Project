@@ -89,15 +89,8 @@ const Signup = () => {
               newErrors.email = 'An account with this email already exists'
             }
           } catch (err) {
-            console.error('Email check error:', err)
             const serverMsg = err.response?.data?.message
-            if (serverMsg) {
-              newErrors.email = serverMsg
-            } else if (err.code === 'ERR_NETWORK' || !err.response) {
-              newErrors.email = 'Cannot connect to backend server. Make sure the Spring Boot backend is running on port 8080.'
-            } else {
-              newErrors.email = 'Unable to verify email. Please try again.'
-            }
+            newErrors.email = serverMsg || 'Unable to reach the server. Please try again.'
           } finally {
             setLoading(false)
           }
@@ -176,7 +169,7 @@ const Signup = () => {
       toast.success('Account created successfully! 🎉')
       navigate('/home')
     } catch (error) {
-      const message = error.response?.data?.message || 'Signup failed. Please try again.'
+      const message = error.response?.data?.message || 'Could not connect to the server. Please try again.'
       toast.error(message)
     } finally {
       setLoading(false)
@@ -191,7 +184,7 @@ const Signup = () => {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary rounded-2xl mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-[#800000] rounded-2xl mb-4">
             <HiAcademicCap className="w-9 h-9 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-gray-900">Sign Up</h1>
@@ -222,7 +215,7 @@ const Signup = () => {
                     value={formData.email}
                     onChange={(e) => updateField('email', e.target.value)}
                     placeholder="yourname@stu.kln.ac.lk"
-                    className={`w-full px-4 py-3 rounded-xl border ${errors.email ? 'border-red-400 bg-red-50' : 'border-gray-200 bg-gray-50'} text-gray-900 placeholder-gray-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all`}
+                    className={`w-full px-4 py-3 rounded-xl border ${errors.email ? 'border-red-400 bg-red-50' : 'border-gray-200 bg-gray-50'} text-gray-900 placeholder-gray-400 focus:border-[#800000] focus:ring-2 focus:ring-[#800000]/10 transition-all`}
                   />
                   {errors.email && (
                     <p className="mt-1.5 text-sm text-red-500">{errors.email}</p>
@@ -233,7 +226,7 @@ const Signup = () => {
                 <button
                   onClick={handleNext}
                   disabled={loading}
-                  className="w-full py-3 bg-primary text-white font-semibold rounded-xl hover:bg-primary-light disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  className="w-full py-3 bg-[#800000] text-white font-semibold rounded-xl hover:bg-[#660000] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                 >
                   {loading ? (
                     <span className="flex items-center justify-center gap-2">
@@ -267,7 +260,7 @@ const Signup = () => {
                     value={formData.firstName}
                     onChange={(e) => updateField('firstName', e.target.value)}
                     placeholder="Enter your first name"
-                    className={`w-full px-4 py-3 rounded-xl border ${errors.firstName ? 'border-red-400 bg-red-50' : 'border-gray-200 bg-gray-50'} text-gray-900 placeholder-gray-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all`}
+                    className={`w-full px-4 py-3 rounded-xl border ${errors.firstName ? 'border-red-400 bg-red-50' : 'border-gray-200 bg-gray-50'} text-gray-900 placeholder-gray-400 focus:border-[#800000] focus:ring-2 focus:ring-[#800000]/10 transition-all`}
                   />
                   {errors.firstName && <p className="mt-1.5 text-sm text-red-500">{errors.firstName}</p>}
                 </div>
@@ -279,7 +272,7 @@ const Signup = () => {
                     value={formData.lastName}
                     onChange={(e) => updateField('lastName', e.target.value)}
                     placeholder="Enter your last name"
-                    className={`w-full px-4 py-3 rounded-xl border ${errors.lastName ? 'border-red-400 bg-red-50' : 'border-gray-200 bg-gray-50'} text-gray-900 placeholder-gray-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all`}
+                    className={`w-full px-4 py-3 rounded-xl border ${errors.lastName ? 'border-red-400 bg-red-50' : 'border-gray-200 bg-gray-50'} text-gray-900 placeholder-gray-400 focus:border-[#800000] focus:ring-2 focus:ring-[#800000]/10 transition-all`}
                   />
                   {errors.lastName && <p className="mt-1.5 text-sm text-red-500">{errors.lastName}</p>}
                 </div>
@@ -293,7 +286,7 @@ const Signup = () => {
                   </button>
                   <button
                     onClick={handleNext}
-                    className="flex-1 py-3 bg-primary text-white font-semibold rounded-xl hover:bg-primary-light transition-all"
+                    className="flex-1 py-3 bg-[#800000] text-white font-semibold rounded-xl hover:bg-[#660000] transition-all"
                   >
                     Continue
                   </button>
@@ -317,7 +310,7 @@ const Signup = () => {
                     type="date"
                     value={formData.birthday}
                     onChange={(e) => updateField('birthday', e.target.value)}
-                    className={`w-full px-4 py-3 rounded-xl border ${errors.birthday ? 'border-red-400 bg-red-50' : 'border-gray-200 bg-gray-50'} text-gray-900 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all`}
+                    className={`w-full px-4 py-3 rounded-xl border ${errors.birthday ? 'border-red-400 bg-red-50' : 'border-gray-200 bg-gray-50'} text-gray-900 focus:border-[#800000] focus:ring-2 focus:ring-[#800000]/10 transition-all`}
                   />
                   {errors.birthday && <p className="mt-1.5 text-sm text-red-500">{errors.birthday}</p>}
                 </div>
@@ -331,7 +324,7 @@ const Signup = () => {
                   </button>
                   <button
                     onClick={handleNext}
-                    className="flex-1 py-3 bg-primary text-white font-semibold rounded-xl hover:bg-primary-light transition-all"
+                    className="flex-1 py-3 bg-[#800000] text-white font-semibold rounded-xl hover:bg-[#660000] transition-all"
                   >
                     Continue
                   </button>
@@ -357,7 +350,7 @@ const Signup = () => {
                       value={formData.password}
                       onChange={(e) => updateField('password', e.target.value)}
                       placeholder="Create a password"
-                      className={`w-full px-4 py-3 rounded-xl border ${errors.password ? 'border-red-400 bg-red-50' : 'border-gray-200 bg-gray-50'} text-gray-900 placeholder-gray-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all pr-12`}
+                      className={`w-full px-4 py-3 rounded-xl border ${errors.password ? 'border-red-400 bg-red-50' : 'border-gray-200 bg-gray-50'} text-gray-900 placeholder-gray-400 focus:border-[#800000] focus:ring-2 focus:ring-[#800000]/10 transition-all pr-12`}
                     />
                     <button
                       type="button"
@@ -408,7 +401,7 @@ const Signup = () => {
                       value={formData.confirmPassword}
                       onChange={(e) => updateField('confirmPassword', e.target.value)}
                       placeholder="Confirm your password"
-                      className={`w-full px-4 py-3 rounded-xl border ${errors.confirmPassword ? 'border-red-400 bg-red-50' : 'border-gray-200 bg-gray-50'} text-gray-900 placeholder-gray-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all pr-12`}
+                      className={`w-full px-4 py-3 rounded-xl border ${errors.confirmPassword ? 'border-red-400 bg-red-50' : 'border-gray-200 bg-gray-50'} text-gray-900 placeholder-gray-400 focus:border-[#800000] focus:ring-2 focus:ring-[#800000]/10 transition-all pr-12`}
                     />
                     <button
                       type="button"
@@ -430,7 +423,7 @@ const Signup = () => {
                   </button>
                   <button
                     onClick={handleNext}
-                    className="flex-1 py-3 bg-primary text-white font-semibold rounded-xl hover:bg-primary-light transition-all"
+                    className="flex-1 py-3 bg-[#800000] text-white font-semibold rounded-xl hover:bg-[#660000] transition-all"
                   >
                     Continue
                   </button>
@@ -453,7 +446,7 @@ const Signup = () => {
                   <select
                     value={formData.faculty}
                     onChange={(e) => updateField('faculty', e.target.value)}
-                    className={`w-full px-4 py-3 rounded-xl border ${errors.faculty ? 'border-red-400 bg-red-50' : 'border-gray-200 bg-gray-50'} text-gray-900 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all`}
+                    className={`w-full px-4 py-3 rounded-xl border ${errors.faculty ? 'border-red-400 bg-red-50' : 'border-gray-200 bg-gray-50'} text-gray-900 focus:border-[#800000] focus:ring-2 focus:ring-[#800000]/10 transition-all`}
                   >
                     <option value="">Select your faculty</option>
                     {FACULTIES.map((faculty) => (
@@ -470,7 +463,7 @@ const Signup = () => {
                     value={formData.degreeProgram}
                     onChange={(e) => updateField('degreeProgram', e.target.value)}
                     placeholder="e.g., BSc (Hons) in Software Engineering"
-                    className={`w-full px-4 py-3 rounded-xl border ${errors.degreeProgram ? 'border-red-400 bg-red-50' : 'border-gray-200 bg-gray-50'} text-gray-900 placeholder-gray-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all`}
+                    className={`w-full px-4 py-3 rounded-xl border ${errors.degreeProgram ? 'border-red-400 bg-red-50' : 'border-gray-200 bg-gray-50'} text-gray-900 placeholder-gray-400 focus:border-[#800000] focus:ring-2 focus:ring-[#800000]/10 transition-all`}
                   />
                   {errors.degreeProgram && <p className="mt-1.5 text-sm text-red-500">{errors.degreeProgram}</p>}
                 </div>
@@ -485,7 +478,7 @@ const Signup = () => {
                   <button
                     onClick={handleNext}
                     disabled={loading}
-                    className="flex-1 py-3 bg-primary text-white font-semibold rounded-xl hover:bg-primary-light disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    className="flex-1 py-3 bg-[#800000] text-white font-semibold rounded-xl hover:bg-[#660000] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                   >
                     {loading ? (
                       <span className="flex items-center justify-center gap-2">
@@ -509,7 +502,7 @@ const Signup = () => {
         {currentStep === 1 && (
           <p className="text-center mt-6 text-sm text-gray-500">
             Already have an account?{' '}
-            <Link to="/login" className="font-semibold text-primary hover:text-primary-light">
+            <Link to="/login" className="font-semibold text-[#800000] hover:underline">
               Sign in
             </Link>
           </p>

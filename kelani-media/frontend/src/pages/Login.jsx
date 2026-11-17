@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { HiAcademicCap, HiEye, HiEyeOff } from 'react-icons/hi'
 import toast from 'react-hot-toast'
 import { useAuth } from '../context/AuthContext.jsx'
@@ -12,7 +12,10 @@ const Login = () => {
   const [rememberMe, setRememberMe] = useState(false)
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
+  const location = useLocation()
   const { login } = useAuth()
+
+  const from = location.state?.from?.pathname || '/home'
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -27,9 +30,9 @@ const Login = () => {
       const response = await authService.login(email, password)
       login(response)
       toast.success('Welcome back!')
-      navigate('/home')
+      navigate(from, { replace: true })
     } catch (error) {
-      const message = error.response?.data?.message || 'Login failed. Please try again.'
+      const message = error.response?.data?.message || 'Could not connect to the server. Please try again.'
       toast.error(message)
     } finally {
       setLoading(false)
@@ -37,34 +40,34 @@ const Login = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary rounded-2xl mb-4">
-            <HiAcademicCap className="w-9 h-9 text-white" />
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-[#800000] text-white rounded-2xl shadow-lg mb-4">
+            <HiAcademicCap className="w-9 h-9" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">Login</h1>
-          <p className="text-gray-500 mt-1">Connect, collaborate, and grow together</p>
+          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">KelaniConnect</h1>
+          <p className="text-gray-500 mt-1 text-sm">University of Kelaniya Student Community Portal</p>
         </div>
 
         {/* Card */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
           <div className="mb-6">
-            <h2 className="text-lg font-semibold text-gray-900">Welcome back</h2>
-            <p className="text-sm text-gray-500">Sign in to your account to continue</p>
+            <h2 className="text-xl font-bold text-gray-900">Sign In</h2>
+            <p className="text-sm text-gray-500 mt-1">Enter your student credentials to continue</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Email */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">University Email</label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter your email"
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 placeholder-gray-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                placeholder="yourname@stu.kln.ac.lk"
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 placeholder-gray-400 focus:border-[#800000] focus:ring-2 focus:ring-[#800000]/10 transition-all text-sm"
               />
             </div>
 
@@ -77,7 +80,7 @@ const Login = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter your password"
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 placeholder-gray-400 focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all pr-12"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-900 placeholder-gray-400 focus:border-[#800000] focus:ring-2 focus:ring-[#800000]/10 transition-all pr-12 text-sm"
                 />
                 <button
                   type="button"
@@ -96,11 +99,11 @@ const Login = () => {
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                  className="w-4 h-4 rounded border-gray-300 text-[#800000] focus:ring-[#800000]"
                 />
                 <span className="text-sm text-gray-600">Remember me</span>
               </label>
-              <button type="button" className="text-sm font-medium text-primary hover:text-primary-light">
+              <button type="button" className="text-sm font-medium text-[#800000] hover:underline">
                 Forgot password?
               </button>
             </div>
@@ -109,7 +112,7 @@ const Login = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-primary text-white font-semibold rounded-xl hover:bg-primary-light disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              className="w-full py-3 bg-[#800000] text-white font-semibold rounded-xl hover:bg-[#660000] shadow-md shadow-[#800000]/15 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
@@ -120,16 +123,17 @@ const Login = () => {
                   Signing in...
                 </span>
               ) : (
-                'Sign in'
+                'Sign In'
               )}
             </button>
+
           </form>
         </div>
 
         {/* Sign up link */}
         <p className="text-center mt-6 text-sm text-gray-500">
           Don't have an account?{' '}
-          <Link to="/signup" className="font-semibold text-primary hover:text-primary-light">
+          <Link to="/signup" className="font-semibold text-[#800000] hover:underline">
             Sign up
           </Link>
         </p>
