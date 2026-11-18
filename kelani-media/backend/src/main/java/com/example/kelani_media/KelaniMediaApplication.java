@@ -1,8 +1,9 @@
 package com.example.kelani_media;
 
-import com.example.kelani_media.config.DotenvLoader;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+import com.example.kelani_media.config.DotenvLoader;
 
 @SpringBootApplication
 public class KelaniMediaApplication {
