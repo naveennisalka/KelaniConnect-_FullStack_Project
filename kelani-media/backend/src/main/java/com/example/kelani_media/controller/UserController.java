@@ -5,6 +5,7 @@ import com.example.kelani_media.dto.UpdateProfileRequest;
 import com.example.kelani_media.model.User;
 import com.example.kelani_media.repository.UserRepository;
 import com.example.kelani_media.service.CurrentUserService;
+import com.example.kelani_media.service.FriendshipService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
@@ -26,12 +27,12 @@ public class UserController {
 
     private final UserRepository userRepository;
     private final CurrentUserService currentUserService;
+    private final FriendshipService friendshipService;
 
     @GetMapping("/discover")
     public List<UserProfileResponse> discover(Authentication authentication) {
         User currentUser = currentUserService.require(authentication);
-        return userRepository.findAll().stream()
-                .filter(user -> !user.getId().equals(currentUser.getId()))
+        return friendshipService.findSuggestions(currentUser.getId()).stream()
                 .map(UserProfileResponse::from)
                 .toList();
     }

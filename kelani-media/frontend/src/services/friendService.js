@@ -1,6 +1,11 @@
 import { api } from './authService.js'
 
 export const friendService = {
+  async getStats() {
+    const response = await api.get('/api/friends/stats')
+    return response.data
+  },
+
   async getPendingRequests() {
     const response = await api.get('/api/friends/requests/pending')
     return response.data

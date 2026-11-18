@@ -4,31 +4,31 @@ import SearchBar from '../components/friends/SearchBar.jsx';
 import FriendRequestCard from '../components/friends/FriendRequestCard.jsx';
 import FindFriendCard from '../components/friends/FindFriendCard.jsx';
 import ProfileStatsCard from '../components/friends/ProfileStatsCard.jsx';
-import { useAuth } from '../context/AuthContext.jsx';
 import { friendService } from '../services/friendService.js';
 import { userService } from '../services/userService.js';
 import toast from 'react-hot-toast';
 
 const FriendsPage = () => {
-  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('requests');
   const [searchQuery, setSearchQuery] = useState('');
   const [pendingRequests, setPendingRequests] = useState([]);
   const [discoveryStudents, setDiscoveryStudents] = useState([]);
-  const [sentFriendIds, setSentFriendIds] = useState(new Set());
+  const [friendsCount, setFriendsCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     const loadFriends = async () => {
       try {
-        const [requests, students] = await Promise.all([
+        const [requests, students, stats] = await Promise.all([
           friendService.getPendingRequests(),
-          userService.discover()
+          userService.discover(),
+          friendService.getStats()
         ]);
         if (!cancelled) {
           setPendingRequests(requests);
           setDiscoveryStudents(students);
+          setFriendsCount(stats.friendsCount);
         }
       } catch {
         if (!cancelled) {
@@ -50,7 +50,12 @@ const FriendsPage = () => {
   const handleAccept = async (requestId) => {
     try {
       await friendService.acceptRequest(requestId);
+      const acceptedRequest = pendingRequests.find((request) => request.id === requestId);
       setPendingRequests((requests) => requests.filter((request) => request.id !== requestId));
+      setFriendsCount((count) => count + 1);
+      if (acceptedRequest) {
+        setDiscoveryStudents((students) => students.filter((student) => student.id !== acceptedRequest.senderId));
+      }
       toast.success('Friend request accepted!');
     } catch {
       toast.error('Could not accept the friend request. Please try again.');
@@ -70,7 +75,7 @@ const FriendsPage = () => {
   const handleAddFriend = async (studentId) => {
     try {
       await friendService.sendRequest(studentId);
-      setSentFriendIds((ids) => new Set([...ids, studentId]));
+      setDiscoveryStudents((students) => students.filter((student) => student.id !== studentId));
       toast.success('Friend request sent!');
     } catch (error) {
       toast.error(error.response?.data?.message || 'Could not send the friend request. Please try again.');
@@ -79,9 +84,9 @@ const FriendsPage = () => {
 
   const filteredDiscoveryStudents = discoveryStudents.filter(s => {
     const q = searchQuery.toLowerCase();
-    return s.name.toLowerCase().includes(q) ||
-           s.faculty.toLowerCase().includes(q) ||
-           s.degree.toLowerCase().includes(q);
+    return (s.name || '').toLowerCase().includes(q) ||
+           (s.faculty || '').toLowerCase().includes(q) ||
+           (s.degree || '').toLowerCase().includes(q);
   });
 
   return (
@@ -161,7 +166,6 @@ const FriendsPage = () => {
                     key={student.id}
                     user={student}
                     onAdd={handleAddFriend}
-                    isAdded={sentFriendIds.has(student.id)}
                   />
                 ))
               ) : (
@@ -180,7 +184,7 @@ const FriendsPage = () => {
         </div>
 
         {/* Profile Sidebar */}
-        <ProfileStatsCard friendsCount={106} orgsCount={8} />
+        <ProfileStatsCard friendsCount={friendsCount} />
       </main>
     </div>
   );

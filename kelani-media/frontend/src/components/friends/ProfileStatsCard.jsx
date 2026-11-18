@@ -1,9 +1,9 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { HiUserGroup, HiOfficeBuilding, HiUser, HiAcademicCap } from 'react-icons/hi';
+import { HiUserGroup, HiUser, HiAcademicCap } from 'react-icons/hi';
 import { useAuth } from '../../context/AuthContext.jsx';
 
-const ProfileStatsCard = ({ friendsCount = 106, orgsCount = 8 }) => {
+const ProfileStatsCard = ({ friendsCount = 0 }) => {
   const { user } = useAuth();
 
   const name = user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'Kelaniya Student';
@@ -33,13 +33,6 @@ const ProfileStatsCard = ({ friendsCount = 106, orgsCount = 8 }) => {
               Friends
             </span>
             <span className="font-bold text-[#800000]">{friendsCount}</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="flex items-center text-sm text-gray-600">
-              <HiOfficeBuilding className="w-4 h-4 mr-2 text-[#800000]" />
-              Organisations
-            </span>
-            <span className="font-bold text-[#800000]">{orgsCount}</span>
           </div>
         </div>
 
