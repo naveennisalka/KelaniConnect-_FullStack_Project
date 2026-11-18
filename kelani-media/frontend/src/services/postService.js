@@ -19,5 +19,13 @@ export const postService = {
   async addComment(postId, content) {
     const response = await api.post(`/api/posts/${encodeURIComponent(postId)}/comments`, { content })
     return response.data
+  },
+
+  async addReply(postId, commentId, content) {
+    const response = await api.post(
+      `/api/posts/${encodeURIComponent(postId)}/comments/${encodeURIComponent(commentId)}/replies`,
+      { content }
+    )
+    return response.data
   }
 }

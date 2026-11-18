@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import Sidebar from '../components/sidebar/Sidebar';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -17,6 +17,10 @@ const ProfilePage = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [profileForm, setProfileForm] = useState({});
+  const [selectedPostId, setSelectedPostId] = useState(null);
+  const [commentDrafts, setCommentDrafts] = useState({});
+  const [replyDrafts, setReplyDrafts] = useState({});
+  const selectedPostRef = useRef(null);
   const { user, updateUser } = useAuth();
   const { id } = useParams();
   const profileId = id || user?.id;
@@ -29,6 +33,7 @@ const ProfilePage = () => {
       return;
     }
 
+    setSelectedPostId(null);
     setLoading(true);
     Promise.all([
       userService.getProfile(profileId),
@@ -61,6 +66,10 @@ const ProfilePage = () => {
     };
   }, [profileId]);
 
+  useEffect(() => {
+    selectedPostRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [selectedPostId]);
+
   const handleProfileSave = async (e) => {
     e.preventDefault();
     setSaving(true);
@@ -85,6 +94,41 @@ const ProfilePage = () => {
       toast.error(error.response?.data?.message || 'Could not send the friend request.');
     }
   };
+
+  const handleAddComment = async (e, postId) => {
+    e.preventDefault();
+    const content = commentDrafts[postId]?.trim();
+    if (!content) return;
+
+    try {
+      const updatedPost = await postService.addComment(postId, content);
+      setPosts((currentPosts) => currentPosts.map((post) => (
+        post.id === postId ? updatedPost : post
+      )));
+      setCommentDrafts((drafts) => ({ ...drafts, [postId]: '' }));
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Could not add your comment. Please try again.');
+    }
+  };
+
+  const handleAddReply = async (e, postId, commentId) => {
+    e.preventDefault();
+    const content = replyDrafts[commentId]?.trim();
+    if (!content) return;
+
+    try {
+      const updatedPost = await postService.addReply(postId, commentId, content);
+      setPosts((currentPosts) => currentPosts.map((post) => (
+        post.id === postId ? updatedPost : post
+      )));
+      setReplyDrafts((drafts) => ({ ...drafts, [commentId]: '' }));
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Could not add your reply. Please try again.');
+    }
+  };
+
+  const selectedPostIndex = posts.findIndex((post) => post.id === selectedPostId);
+  const feedPosts = selectedPostIndex >= 0 ? posts.slice(selectedPostIndex) : [];
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -194,19 +238,107 @@ const ProfilePage = () => {
 
         {/* Dynamic Tab Content Area (Wireframe Clean View) */}
         {activeTab === 'Posts' && (
-          <div className="space-y-4">
-            {posts.length ? posts.map((post) => (
-              <article key={post.id} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 space-y-3">
-                <p className="text-sm text-gray-700 whitespace-pre-line">{post.content}</p>
-                {post.mediaUrl && <img src={post.mediaUrl} alt="Post attachment" loading="lazy" className="max-h-96 w-full rounded-xl object-cover" />}
-                <p className="text-xs text-gray-400">{post.likedBy.length} likes · {post.comments.length} comments</p>
-              </article>
-            )) : (
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 min-h-[200px] flex items-center justify-center">
-                <p className="text-sm text-gray-400">No posts to show yet.</p>
-              </div>
-            )}
-          </div>
+          selectedPostIndex >= 0 ? (
+            <div className="max-w-3xl mx-auto w-full space-y-4">
+              <button
+                type="button"
+                onClick={() => setSelectedPostId(null)}
+                className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm border border-gray-100 hover:bg-gray-50"
+              >
+                Back to photos
+              </button>
+              {feedPosts.map((post) => (
+                <article
+                  key={post.id}
+                  ref={post.id === selectedPostId ? selectedPostRef : null}
+                  className="scroll-mt-6 overflow-hidden bg-white rounded-2xl shadow-sm border border-gray-100"
+                >
+                  <div className="flex items-center gap-3 p-4 border-b border-gray-100">
+                    <div className="w-10 h-10 rounded-full bg-[#800000]/10 text-[#800000] font-bold flex items-center justify-center">
+                      {(post.authorName || profile?.firstName || 'S').charAt(0)}
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-gray-800">{post.authorName || `${profile?.firstName || ''} ${profile?.lastName || ''}`.trim()}</p>
+                      <p className="text-xs text-gray-400">{post.createdAt ? new Date(post.createdAt).toLocaleString() : ''}</p>
+                    </div>
+                  </div>
+                  {post.mediaUrl && <img src={post.mediaUrl} alt="Post attachment" className="max-h-[70vh] w-full bg-black object-contain" />}
+                  <div className="p-4 space-y-4">
+                    <p className="text-sm text-gray-700 whitespace-pre-line">{post.content}</p>
+                    <p className="text-xs text-gray-400">{(post.likedBy || []).length} likes · {(post.comments || []).length} comments</p>
+                    <section className="space-y-3 border-t border-gray-100 pt-4">
+                      <h3 className="text-sm font-semibold text-gray-800">Comments</h3>
+                      {(post.comments || []).length ? post.comments.map((comment) => (
+                        <div key={comment.id} className="space-y-2 text-sm">
+                          <p>
+                            <span className="font-semibold text-gray-800">{comment.authorName}</span>
+                            <span className="text-gray-600"> {comment.content}</span>
+                          </p>
+                          <div className="ml-4 border-l-2 border-gray-100 pl-3 space-y-2">
+                            {(comment.replies || []).map((reply) => (
+                              <p key={reply.id}>
+                                <span className="font-semibold text-gray-800">{reply.authorName}</span>
+                                <span className="text-gray-600"> {reply.content}</span>
+                              </p>
+                            ))}
+                            <form onSubmit={(e) => handleAddReply(e, post.id, comment.id)} className="flex gap-2">
+                              <input
+                                value={replyDrafts[comment.id] || ''}
+                                onChange={(e) => setReplyDrafts((drafts) => ({ ...drafts, [comment.id]: e.target.value }))}
+                                maxLength={1000}
+                                placeholder="Write a reply..."
+                                aria-label={`Reply to ${comment.authorName}`}
+                                className="min-w-0 flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                              />
+                              <button type="submit" disabled={!replyDrafts[comment.id]?.trim()} className="rounded-lg bg-[#800000] px-3 py-2 text-xs font-semibold text-white disabled:opacity-50">
+                                Reply
+                              </button>
+                            </form>
+                          </div>
+                        </div>
+                      )) : <p className="text-sm text-gray-400">No comments yet.</p>}
+                      <form onSubmit={(e) => handleAddComment(e, post.id)} className="flex gap-2">
+                        <input
+                          value={commentDrafts[post.id] || ''}
+                          onChange={(e) => setCommentDrafts((drafts) => ({ ...drafts, [post.id]: e.target.value }))}
+                          maxLength={1000}
+                          placeholder="Add a comment..."
+                          aria-label="Add a comment"
+                          className="min-w-0 flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                        />
+                        <button type="submit" disabled={!commentDrafts[post.id]?.trim()} className="rounded-lg bg-[#800000] px-3 py-2 text-xs font-semibold text-white disabled:opacity-50">
+                          Send
+                        </button>
+                      </form>
+                    </section>
+                  </div>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {posts.length ? posts.map((post) => (
+                <article key={post.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 space-y-3">
+                  {post.mediaUrl && (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedPostId(post.id)}
+                      aria-label={`Open post by ${post.authorName || profile?.firstName || 'user'}`}
+                      className="block w-full"
+                    >
+                      <img src={post.mediaUrl} alt="Post attachment" loading="lazy" className="aspect-square w-full rounded-xl object-cover" />
+                    </button>
+                  )}
+                  <p className="text-sm text-gray-700 whitespace-pre-line">{post.content}</p>
+                  <p className="text-xs text-gray-400">{(post.likedBy || []).length} likes · {(post.comments || []).length} comments</p>
+                </article>
+              )) : (
+                <div className="lg:col-span-3 bg-white rounded-2xl p-6 shadow-sm border border-gray-100 min-h-[200px] flex items-center justify-center">
+                  <p className="text-sm text-gray-400">No posts to show yet.</p>
+                </div>
+              )}
+            </div>
+          )
         )}
 
         {activeTab === 'Events' && (

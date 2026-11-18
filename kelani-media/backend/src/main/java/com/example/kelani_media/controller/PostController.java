@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -67,6 +68,30 @@ public class PostController {
         User author = currentUserService.require(authentication);
         Post post = findPost(postId);
         post.getComments().add(new Post.Comment(
+                author.getId(),
+                (author.getFirstName() + " " + author.getLastName()).trim(),
+                request.content().trim()
+        ));
+        return postRepository.save(post);
+    }
+
+    @PostMapping("/{postId}/comments/{commentId}/replies")
+    public Post addReply(
+            Authentication authentication,
+            @PathVariable String postId,
+            @PathVariable String commentId,
+            @Valid @RequestBody CreateCommentRequest request
+    ) {
+        User author = currentUserService.require(authentication);
+        Post post = findPost(postId);
+        Post.Comment comment = post.getComments().stream()
+                .filter(item -> commentId.equals(item.getId()))
+                .findFirst()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Comment not found"));
+        if (comment.getReplies() == null) {
+            comment.setReplies(new ArrayList<>());
+        }
+        comment.getReplies().add(new Post.Comment(
                 author.getId(),
                 (author.getFirstName() + " " + author.getLastName()).trim(),
                 request.content().trim()
