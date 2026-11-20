@@ -36,6 +36,7 @@ public class Post {
         private String authorName;
         private String content;
         private LocalDateTime createdAt = LocalDateTime.now();
+        private List<Comment> replies = new ArrayList<>();
 
         public Comment(String authorId, String authorName, String content) {
             this.authorId = authorId;
