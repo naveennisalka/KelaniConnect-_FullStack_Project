@@ -15,6 +15,12 @@ export const userService = {
     return response.data
   },
 
+  // Search students by name (used to add event organizers and invite members)
+  async search(text) {
+    const response = await api.get('/api/users/search', { params: { q: text } })
+    return response.data
+  },
+
   async updateProfile(profileData) {
     const response = await api.put('/api/users/me', profileData)
     return response.data

@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 import jakarta.validation.Valid;
@@ -33,6 +34,20 @@ public class UserController {
     public List<UserProfileResponse> discover(Authentication authentication) {
         User currentUser = currentUserService.require(authentication);
         return friendshipService.findSuggestions(currentUser.getId()).stream()
+                .map(UserProfileResponse::from)
+                .toList();
+    }
+
+    // Search students by name, used when adding organizers or inviting members to an event
+    @GetMapping("/search")
+    public List<UserProfileResponse> searchUsers(@RequestParam String q) {
+        if (q == null || q.trim().length() < 2) {
+            return List.of();
+        }
+        String text = q.trim();
+        return userRepository
+                .findTop10ByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(text, text)
+                .stream()
                 .map(UserProfileResponse::from)
                 .toList();
     }

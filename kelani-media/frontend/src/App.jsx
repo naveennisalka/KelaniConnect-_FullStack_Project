@@ -6,6 +6,8 @@ import Home from './pages/Home.jsx';
 import FriendsPage from './pages/FriendsPage.jsx';
 import JobsPage from './pages/JobsPage.jsx';
 import EventsPage from './pages/EventsPage.jsx';
+import CreateEventPage from './pages/CreateEventPage.jsx';
+import EventDetailsPage from './pages/EventDetailsPage.jsx';
 import ProfilePage from './pages/ProfilePage.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import { useAuth } from './context/AuthContext.jsx';
@@ -69,6 +71,22 @@ function App() {
         element={
           <ProtectedRoute>
             <EventsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/events/create"
+        element={
+          <ProtectedRoute>
+            <CreateEventPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/events/:id"
+        element={
+          <ProtectedRoute>
+            <EventDetailsPage />
           </ProtectedRoute>
         }
       />

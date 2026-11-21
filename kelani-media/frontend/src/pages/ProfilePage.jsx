@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { HiCalendar } from 'react-icons/hi';
 import Sidebar from '../components/sidebar/Sidebar';
 import { useAuth } from '../context/AuthContext.jsx';
 import { userService } from '../services/userService.js';
@@ -7,6 +8,7 @@ import { postService } from '../services/postService.js';
 import { eventService } from '../services/eventService.js';
 import { friendService } from '../services/friendService.js';
 import toast from 'react-hot-toast';
+import { formatEventDate, isEventOrganizer } from '../utils/eventUtils.js';
 
 const ProfilePage = () => {
   const [activeTab, setActiveTab] = useState('Posts');
@@ -23,6 +25,7 @@ const ProfilePage = () => {
   const selectedPostRef = useRef(null);
   const { user, updateUser } = useAuth();
   const { id } = useParams();
+  const navigate = useNavigate();
   const profileId = id || user?.id;
   const isOwnProfile = !id || id === user?.id;
 
@@ -51,7 +54,8 @@ const ProfilePage = () => {
           degreeProgram: data.degreeProgram || ''
         });
         setPosts(allPosts.filter((post) => post.authorId === profileId));
-        setEvents(allEvents.filter((event) => event.organizerId === profileId));
+        // Events that this user created or helps to organize
+        setEvents(allEvents.filter((event) => isEventOrganizer(event, profileId)));
       }
     })
       .catch(() => {
@@ -165,9 +169,16 @@ const ProfilePage = () => {
 
             <div className="flex gap-3">
               {isOwnProfile ? (
-                <button onClick={() => setEditing((current) => !current)} className="bg-gray-100 text-gray-700 hover:bg-gray-200 px-5 py-2 rounded-xl text-xs font-semibold transition-colors shadow-sm">
-                  {editing ? 'Cancel edit' : 'Edit profile'}
-                </button>
+                <>
+                  {/* Anyone can create an event page for their university event */}
+                  <button onClick={() => navigate('/events/create')} className="flex items-center gap-1.5 bg-[#800000] text-white hover:bg-[#600000] px-5 py-2 rounded-xl text-xs font-semibold transition-colors shadow-sm">
+                    <HiCalendar className="w-4 h-4" />
+                    Create Event
+                  </button>
+                  <button onClick={() => setEditing((current) => !current)} className="bg-gray-100 text-gray-700 hover:bg-gray-200 px-5 py-2 rounded-xl text-xs font-semibold transition-colors shadow-sm">
+                    {editing ? 'Cancel edit' : 'Edit profile'}
+                  </button>
+                </>
               ) : (
                 <button onClick={handleAddFriend} className="bg-[#800000] text-white hover:bg-[#600000] px-5 py-2 rounded-xl text-xs font-semibold transition-colors shadow-sm">
                   Add Friend
@@ -348,10 +359,10 @@ const ProfilePage = () => {
               <Link to="/events" className="text-xs font-semibold text-[#800000]">All events</Link>
             </div>
             {events.length ? events.map((event) => (
-              <div key={event.id} className="border-b border-gray-100 py-3 last:border-0">
+              <Link key={event.id} to={`/events/${event.id}`} className="block border-b border-gray-100 py-3 last:border-0 hover:bg-gray-50 rounded-lg px-2">
                 <p className="text-sm font-semibold text-gray-800">{event.title}</p>
-                <p className="text-xs text-gray-500">{event.organizer} · {event.location} · {new Date(event.startsAt).toLocaleString()}</p>
-              </div>
+                <p className="text-xs text-gray-500">{event.location} · {formatEventDate(event.startsAt)}</p>
+              </Link>
             )) : <p className="text-sm text-gray-400">No events to show yet.</p>}
           </div>
         )}
@@ -372,4 +383,4 @@ const ProfilePage = () => {
   );
 };
 
-export default ProfilePage;
+export default ProfilePage;
